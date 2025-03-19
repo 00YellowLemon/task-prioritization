@@ -7,3 +7,4 @@ langserve==0.0.30
 httpx==0.24.1
 pydantic>=1.10.8,<2.0.0
 sse_starlette
+python-dotenv>=1.0.0
