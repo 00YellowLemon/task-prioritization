@@ -3,6 +3,7 @@ uvicorn>=0.23.2
 langchain>=0.0.267
 langchain-google-genai>=0.0.5
 google-generativeai>=0.3.0
-langserve==0.0.30  # Pin to a specific version that works with your httpx
-httpx==0.24.1  # Pin to this specific version
+langserve==0.0.30
+httpx==0.24.1
 pydantic>=1.10.8,<2.0.0
+sse_starlette

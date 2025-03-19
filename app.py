@@ -59,24 +59,21 @@ model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
 # Create the task prioritization chain
 def prioritize_task_chain():
-    from langchain.chains import LLMChain
     from langchain.schema.runnable import RunnablePassthrough
-    
-    llm_chain = LLMChain(llm=model, prompt=prompt)
-    
+    from langchain.schema.runnable import RunnableSequence
     def parse_output(output):
-        parsed = output_parser.parse(output["text"])
-        # Convert string boolean values to actual booleans
+        parsed = output_parser.parse(output)
         return {
             "importance": parsed["importance"].lower() == "true",
             "urgency": parsed["urgency"].lower() == "true"
         }
-    
     return (
-        RunnablePassthrough.assign(text=llm_chain) 
-        | parse_output
+        {"task": RunnablePassthrough()}
+        | prompt
+        | model
+        | output_parser.parse
+        | RunnablePassthrough.assign(importance = lambda x : x["importance"].lower() == "true", urgency = lambda x: x["urgency"].lower() == "true")
     )
-
 # Create FastAPI app
 app = FastAPI(
     title="Task Prioritization API",
