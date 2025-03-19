@@ -7,6 +7,10 @@ from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
 from langserve import add_routes
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Check if Google API key is set
 if "GOOGLE_API_KEY" not in os.environ:
