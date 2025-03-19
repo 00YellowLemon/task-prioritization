@@ -55,7 +55,7 @@ prompt = ChatPromptTemplate(
 )
 
 # Create the Gemini model
-model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0)
+model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
 # Create the task prioritization chain
 def prioritize_task_chain():
