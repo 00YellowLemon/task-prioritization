@@ -1,18 +1,18 @@
-from typing import Dict
+from typing import Dict, Optional, Type
 import os
 from fastapi import FastAPI
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.output_parsers import ResponseSchema, StructuredOutputParser
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate
+from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate
 from langchain.pydantic_v1 import BaseModel, Field
 from langserve import add_routes
 from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 from langchain_core.messages import AIMessage
 import uvicorn
-
+from langchain.chains import LLMChain
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 
 # Load environment variables from .env file
 
@@ -20,26 +20,22 @@ load_dotenv()
 if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not set. Set it before running the server.")
 
-# Define the input schema
+# Task Prioritization Logic (remains the same)
 class TaskInput(BaseModel):
     task: str = Field(description="The task to prioritize")
 
-# Define the output schema
 class TaskPrioritization(BaseModel):
     importance: bool = Field(description="Whether the task is important (True/False)")
     urgency: bool = Field(description="Whether the task is urgent (True/False)")
 
-# Define response schemas
 response_schemas = [
     ResponseSchema(name="importance", description="Whether the task is important. Must be 'true' or 'false'"),
     ResponseSchema(name="urgency", description="Whether the task is urgent. Must be 'true' or 'false'")
 ]
 
-# Create the output parser
 output_parser = StructuredOutputParser.from_response_schemas(response_schemas)
 format_instructions = output_parser.get_format_instructions()
 
-# Create the prompt template
 def get_task_prioritization_prompt_template():
     template = (
         """
@@ -59,10 +55,8 @@ def get_task_prioritization_prompt_template():
         partial_variables={"format_instructions": format_instructions}
     )
 
-# Initialize the Gemini model
 model = ChatGoogleGenerativeAI(model="gemini-2.0-flash", temperature=0)
 
-# Define the prioritization chain
 def prioritize_task_chain():
     def extract_content(message: AIMessage) -> str:
         return message.content if hasattr(message, 'content') else ""
@@ -75,21 +69,52 @@ def prioritize_task_chain():
         }
 
     return (
-        {"task": RunnablePassthrough()} 
+        {"task": RunnablePassthrough()}
         | get_task_prioritization_prompt_template()
-        | model 
-        | RunnableLambda(extract_content) 
+        | model
+        | RunnableLambda(extract_content)
         | RunnableLambda(parse_output)
     )
 
-# Create FastAPI app
+# Simplified Reflection Insight Logic (using LLMChain directly)
+class ReflectionInsightInput(BaseModel):
+    reflection: str = Field(..., description="User's reflection with questions and answers.")
+
+insight_template = """
+You are an insightful reflection analyst. Your job is to provide deep insights based on a user's reflection,
+which includes questions they've been asked and their answers.
+
+When analyzing reflections, consider:
+1. Patterns in the user's thinking
+2. Potential blind spots or biases
+3. Areas for further exploration or growth
+4. Connections between different answers
+5. Underlying themes or values revealed
+
+Provide thoughtful, nuanced insights that help the user gain new perspectives on their reflections.
+
+User Reflection:
+{reflection}
+"""
+
+insight_prompt = PromptTemplate(
+    template=insight_template,
+    input_variables=["reflection"]
+)
+
+insight_chain = LLMChain(llm=model, prompt=insight_prompt)
+
+def get_insights(reflection: str) -> str:
+    response = insight_chain.invoke({"reflection": reflection})
+    return response["text"]
+
+# FastAPI App
 app = FastAPI(
-    title="Task Prioritization API",
-    description="API for prioritizing tasks based on importance and urgency using Gemini",
+    title="Task Prioritization and Reflection Insights API",
+    description="API for prioritizing tasks and generating reflection insights using Gemini",
     version="1.0.0",
 )
 
-# Add API routes
 add_routes(
     app,
     prioritize_task_chain(),
@@ -98,15 +123,19 @@ add_routes(
     output_type=TaskPrioritization,
 )
 
-# Root endpoint
+@app.post("/get-reflection-insights/")
+async def reflection_insights(reflection_input: ReflectionInsightInput) -> Dict[str, str]:
+    insights = get_insights(reflection_input.reflection)
+    return {"insights": insights}
+
 @app.get("/", include_in_schema=False)
 async def root():
     return {
-        "message": "Task Prioritization API is running!",
+        "message": "Task Prioritization and Reflection Insights API is running!",
         "documentation": "/docs",
-        "endpoints": {"prioritize_task": "/prioritize-task/invoke"}
+        "endpoints": {"prioritize_task": "/prioritize-task/invoke", "reflection_insights": "/get-reflection-insights"}
     }
 
-# Start the server
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+    
