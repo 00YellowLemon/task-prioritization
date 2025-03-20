@@ -2,9 +2,8 @@ fastapi>=0.103.1
 uvicorn>=0.23.2
 langchain>=0.0.267
 langchain-google-genai>=0.0.5
-google-generativeai>=0.3.0
-langserve==0.0.30
-httpx==0.24.1
+langserve[all]==0.0.30
 pydantic>=1.10.8,<2.0.0
 sse_starlette
-python-dotenv>=1.0.0
+python-dotenv>=1.0.1
+httpx<0.26  # Prevent ImportError from langserve

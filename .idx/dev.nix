@@ -1,15 +1,17 @@
 { pkgs, ... }: {
-  # Which nixpkgs channel to use.
-  channel = "stable-24.05"; # or "unstable"
-  # Use https://search.nixos.org/packages to find packages
+  channel = "stable-24.05";
+
   packages = [
-    pkgs.python3
+    pkgs.python311
     pkgs.python311Packages.pip
     pkgs.python311Packages.fastapi
     pkgs.python311Packages.uvicorn
+    pkgs.python311Packages.pandas # Example, add your other dependencies
+    pkgs.python311Packages.requests # Example, add your other dependencies
   ];
-  # Sets environment variables in the workspace
+
   env = {};
+
   idx = {
     previews = {
       enable = true;
@@ -21,14 +23,10 @@
         };
       };
     };
-    # Search for the extensions you want on https://open-vsx.org/ and use "publisher.id"
     extensions = [ "ms-python.python" "rangav.vscode-thunder-client" ];
     workspace = {
-      # Runs when a workspace is first created with this `dev.nix` file
       onCreate = {
-        install =
-          "python -m venv .venv && source .venv/bin/activate &&  pip install -r requirements.txt";
-        # Open editors for the following files by default, if they exist:
+        install = "python3.11 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt";
         default.openFiles = [ "app.py" ];
       };
     };
