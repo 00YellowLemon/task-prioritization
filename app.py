@@ -12,6 +12,10 @@ import uvicorn
 from langchain.chains import LLMChain
 from dotenv import load_dotenv
 
+from reflection_insights_agent import get_insights as get_reflection_insights
+from reflection_summary_agent import get_insights as get_reflection_summary
+from task_prioritization_agent import prioritize_task_chain
+
 load_dotenv()
 
 # Load environment variables from .env file
@@ -21,3 +25,15 @@ if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not set. Set it before running the server.")
 
 # Initialize the Gemini model
+
+app = FastAPI()
+
+# Add routes for the agents
+add_routes(app, {
+    "/reflection-insights": get_reflection_insights,
+    "/reflection-summary": get_reflection_summary,
+    "/task-prioritization": prioritize_task_chain()
+})
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
