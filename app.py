@@ -1,17 +1,10 @@
-from typing import Dict, Optional, Type
 import os
 from fastapi import FastAPI
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
-from langchain.prompts import ChatPromptTemplate, HumanMessagePromptTemplate, PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
 from langserve import add_routes
-from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
-from langchain_core.messages import AIMessage
 import uvicorn
-from langchain.chains import LLMChain
 from dotenv import load_dotenv
 
+<<<<<<< HEAD
 from reflection_insights_agent import get_insights as get_reflection_insights
 from reflection_summary_agent import get_insights as get_reflection_summary
 from task_prioritization_agent import prioritize_task_chain
@@ -34,6 +27,53 @@ add_routes(app, {
     "/reflection-summary": get_reflection_summary,
     "/task-prioritization": prioritize_task_chain()
 })
+=======
+# Import the task prioritization chain
+from task_prioritization_agent import chain
+from reflection_insights_agent import reflection_insights_chain
+from reflection_summary_agent import create_reflection_summary_agent
 
+# Load environment variables
+load_dotenv()
+
+# Create FastAPI app
+app = FastAPI(
+    title="Task Prioritization API",
+    description="API for task prioritization using AI"
+)
+
+# Add route for task prioritization
+add_routes(
+    app, 
+    chain,
+    path="/task"
+)
+
+add_routes(
+    app,
+    reflection_insights_chain,
+    path="/reflection_insights"
+)
+
+add_routes(
+    app,
+    create_reflection_summary_agent,
+    path="/reflection_summary"
+
+)
+
+>>>>>>> breakdown-tasks
+
+
+# Optional: Add a health check endpoint
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
+
+# Run the server
 if __name__ == "__main__":
+<<<<<<< HEAD
     uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+=======
+    uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8800)))
+>>>>>>> breakdown-tasks
