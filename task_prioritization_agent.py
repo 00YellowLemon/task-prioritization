@@ -14,7 +14,7 @@ if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not set.")
 
 # Initialize the Gemini model
-model = ChatGoogleGenerativeAI(model="gemini-2.0-flash-lite", temperature=0)
+model = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0)
 
 # Structured Output Model
 class TaskPriority(BaseModel):
@@ -32,24 +32,21 @@ class TaskPriority(BaseModel):
 
 
 prompt_template = ChatPromptTemplate.from_template("""
-You are a task prioritization assistant. Analyze the given task carefully.
+    You are a task prioritization assistant. Analyze the given task carefully.
 
-Task: {task}
+    Task: {task}
 
-Provide a precise assessment:
-- Determine if the task is IMPORTANT (True/False)
-- Determine if the task is URGENT (True/False)
+    Provide a precise assessment:
+    - Determine if the task is IMPORTANT (True/False)
+    - Determine if the task is URGENT (True/False)
 
-Strictly respond in JSON format:
-```json
-{{
-  "is_important": true/false,
-  "is_urgent": true/false
-}}
+    Strictly respond in JSON format:
+    ```json
+    {{
+    "is_important": true/false,
+    "is_urgent": true/false
+    }}
+""")
 
 # Create the chain using the model's structured output method
 chain = prompt_template | model.with_structured_output(TaskPriority)
-
-""")
-
-

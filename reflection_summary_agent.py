@@ -15,7 +15,7 @@ if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError("GOOGLE_API_KEY environment variable not set.")
 
 # Initialize the Gemini model (consider initializing in main.py and passing as dependency)
-model = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
+model = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Define Pydantic model for the structured output
 class ReflectionSummaryOutput(BaseModel):
