@@ -1,63 +1,77 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import PromptTemplate
-from langchain.pydantic_v1 import BaseModel, Field
-from langchain.output_parsers import PydanticOutputParser
-from typing import List, Dict
 import os
 from dotenv import load_dotenv
-import json
-from langchain_core.runnables import RunnablePassthrough, RunnableSequence
+from typing import List, Dict
 
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.prompts import PromptTemplate
+from langchain_core.pydantic_v1 import BaseModel, Field
+from langchain.output_parsers import PydanticOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+# Load environment variables
 load_dotenv()
 
-if not os.getenv("GOOGLE_API_KEY"):
-    raise ValueError("GOOGLE_API_KEY environment variable not set.")
-
-# Initialize the Gemini model
-model = ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0, google_api_key=os.getenv("GOOGLE_API_KEY"))
-
-# Define Pydantic models for structured output
+# Pydantic Models for Structured Output
 class Insight(BaseModel):
-    thinking: str = Field(..., description="Analysis for Thinking")
-    blindspot: str = Field(..., description="Analysis for Blindspot")
-    growth: str = Field(..., description="Analysis for Growth")
-    action: str = Field(..., description="Concise actionable insight or next step")
+    thinking: str = Field(..., description="Analysis of your thought patterns")
+    blindspot: str = Field(..., description="What you might be overlooking")
+    growth: str = Field(..., description="Your growth opportunity")
+    action: str = Field(..., description="Your recommended next step")
 
 class Insights(BaseModel):
-    insights: List[Dict[str, Insight]]
+    insights: List[Insight]
 
-# Set up output parser
+# Initialize the model
+model = ChatGoogleGenerativeAI(
+    model="gemini-1.5-flash", 
+    temperature=0, 
+    google_api_key=os.getenv("GOOGLE_API_KEY")
+)
+
+# Create Output Parser
 parser = PydanticOutputParser(pydantic_object=Insights)
 
-insight_template_structured = """
-You are an insightful reflection analyst. Your job is to provide between 1 and 4 distinct insights based on the user's reflection. For each insight, provide analysis under the following four consistent categories:
+# Define Prompt Template
+insight_template = """
+You're my personal reflection coach. I'm sharing these thoughts with you:
 
-Thinking: (Describe any recurring patterns or approaches in the user's responses)
-Blindspot: (Identify any potential areas where the user might have overlooked something or shown bias)
-Growth: (Suggest areas for further exploration or development for the user)
-Action: (Provide a concise actionable insight or next step for the user)
+{reflections}
 
-Please structure your response as a JSON array of objects, where each object represents an insight. Each insight object should have the following keys: "thinking", "blindspot", "growth", and "action".
+For each entry I've shared, please help me understand:
+1. What my thinking patterns reveal about me
+2. What perspectives I might be missing
+3. Where I have the most potential to grow
+4. One concrete action I could take
 
-Here are the format instructions:
-{format_instructions}
+Format your response as clean JSON with these exact fields for each insight:
+- "thinking"
+- "blindspot" 
+- "growth"
+- "action"
 
-User Reflection:
-{reflection}
+Structure the output like this:
+{{
+  "insights": [
+    {{
+      "thinking": "...",
+      "blindspot": "...", 
+      "growth": "...",
+      "action": "..."
+    }}
+  ]
+}}
 """
 
-insight_prompt_structured = PromptTemplate(
-    template=insight_template_structured,
-    input_variables=["reflection"],
-    partial_variables={"format_instructions": parser.get_format_instructions()}
+# Create Prompt Template
+insight_prompt = PromptTemplate(
+    template=insight_template,
+    input_variables=["reflections"]
 )
 
-reflection_insights_chain = RunnableSequence(
-    {"reflection": RunnablePassthrough()},
-    insight_prompt_structured,
-    model,
-    parser
+# Create the final chain
+reflection_insights_chain = (
+    {"reflections": RunnablePassthrough()} 
+    | insight_prompt 
+    | model 
+    | parser
 )
-
-def create_reflection_insights_chain():
-    return reflection_insights_chain
