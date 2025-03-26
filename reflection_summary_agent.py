@@ -26,7 +26,7 @@ summary_parser = PydanticOutputParser(pydantic_object=ReflectionSummary)
 prompt = PromptTemplate(
     template="""Summarize this reflection in one line (max 12 words):
     
-    {input}
+    reflection: {input}
     
     Respond in this exact JSON format:
     {{
