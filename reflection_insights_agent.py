@@ -49,7 +49,7 @@ Format your response as clean JSON with these exact fields for each insight:
 - "growth"
 - "action"
 
-Structure the output like this:
+Structure the output like this with no extra text:
 {{
   "insights": [
     {{
