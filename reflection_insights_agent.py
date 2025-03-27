@@ -6,7 +6,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain_core.pydantic_v1 import BaseModel, Field
 from langchain.output_parsers import PydanticOutputParser
-from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnablePassthrough, RunnableParallel
 
 # Load environment variables
 load_dotenv()
@@ -70,7 +70,7 @@ insight_prompt = PromptTemplate(
 
 # Create the final chain
 reflection_insights_chain = (
-    {"reflections": RunnablePassthrough()} 
+    RunnableParallel({"reflections": RunnablePassthrough()})
     | insight_prompt 
     | model 
     | parser
