@@ -3,7 +3,8 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 import uvicorn
 from dotenv import load_dotenv
-from fastapi.middleware.cors import CORSMiddleware  # Import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 # Import the chains
 from task_prioritization_agent import chain as task_chain
@@ -28,29 +29,39 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
+# Pydantic models for request bodies
+class TaskRequest(BaseModel):
+    task: str
+
+class ReflectionInsightsRequest(BaseModel):
+    reflections: str
+
+class ReflectionSummaryRequest(BaseModel):
+    reflection: str
+
 # Task prioritization endpoint
 @app.post("/task")
-async def prioritize_task(task: str):
+async def prioritize_task(request: TaskRequest):
     try:
-        result = task_chain.invoke({"task": task})
+        result = task_chain.invoke({"task": request.task})
         return JSONResponse(content=result.dict())
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # Reflection insights endpoint
 @app.post("/reflection_insights")
-async def get_reflection_insights(reflections: str):
+async def get_reflection_insights(request: ReflectionInsightsRequest):
     try:
-        result = reflection_insights_chain.invoke(reflections)
+        result = reflection_insights_chain.invoke(request.reflections)
         return JSONResponse(content=result.dict())
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
 
 # Reflection summary endpoint
 @app.post("/reflection_summary")
-async def get_reflection_summary(reflection: str):
+async def get_reflection_summary(request: ReflectionSummaryRequest):
     try:
-        result = summary_chain.invoke(reflection)
+        result = summary_chain.invoke(request.reflection)
         return JSONResponse(content=result.dict())
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
